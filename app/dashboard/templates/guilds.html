@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Мои серверы · Guardian{% endblock %}
+{% block body %}
+<header class="public-header">
+  <a class="brand" href="/">
+    <span class="logo">🛡️</span>
+    <span>
+      <span class="brand-name">Guardian</span>
+      <span class="brand-sub">moderation suite</span>
+    </span>
+  </a>
+  <div class="topbar-right">
+    <span class="user">
+      <img class="avatar" src="{{ avatar_url(session.user_id, session.avatar) }}" alt="">
+      <span>{{ session.username }}</span>
+    </span>
+    <form method="post" action="/logout">
+      <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+      <button class="btn ghost sm" type="submit">Выйти</button>
+    </form>
+  </div>
+</header>
+
+<main class="public-main">
+  {% if ok %}<div class="alert ok">{{ ok }}</div>{% endif %}
+  {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+
+  <h1 class="public-title">Выберите сервер</h1>
+  <p class="public-sub">Показаны серверы, где у вас есть права на управление.</p>
+
+  {% if guilds %}
+    <div class="guild-grid">
+      {% for g in guilds %}
+        {% if g.bot_present %}
+          <a class="guild-card" href="/g/{{ g.id }}">
+            {% if g.icon %}
+              <img src="{{ guild_icon(g.id, g.icon) }}" alt="">
+            {% else %}
+              <span class="fallback">{{ g.name[0]|upper }}</span>
+            {% endif %}
+            <span class="grow">
+              <span class="g-name">{{ g.name }}</span>
+              <span class="g-meta">
+                {{ g.member_count or '—' }} участников
+                {% if g.owner %} · владелец{% endif %}
+              </span>
+            </span>
+            <span class="badge green">настроить</span>
+          </a>
+        {% else %}
+          <div class="guild-card">
+            {% if g.icon %}
+              <img src="{{ guild_icon(g.id, g.icon) }}" alt="">
+            {% else %}
+              <span class="fallback">{{ g.name[0]|upper }}</span>
+            {% endif %}
+            <span class="grow">
+              <span class="g-name">{{ g.name }}</span>
+              <span class="g-meta">Бот не добавлен на сервер</span>
+            </span>
+            {% if invite_url %}
+              <a class="btn secondary sm" href="{{ invite_url }}" target="_blank" rel="noreferrer">Добавить</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <p>У вас нет серверов с правами управления.</p>
+      {% if invite_url %}
+        <a class="btn primary" href="{{ invite_url }}" target="_blank" rel="noreferrer">Пригласить бота</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</main>
+{% endblock %}

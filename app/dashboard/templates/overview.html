@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="grid stats">
+  <div class="card stat">
+    <div class="label">Участники</div>
+    <div class="value">{{ member_count }}</div>
+    <div class="sub">на сервере сейчас</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Предупреждения</div>
+    <div class="value">{{ counters.warnings }}</div>
+    <div class="sub">активных</div>
+  </div>
+  <div class="card stat">
+    <div class="label">Наказания</div>
+    <div class="value">{{ counters.active_cases }}</div>
+    <div class="sub">действуют сейчас</div>
+  </div>
+  <div class="card stat">
+    <div class="label">В трекинге</div>
+    <div class="value">{{ counters.tracked }}</div>
+    <div class="sub">участников с опытом</div>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Последние наказания</h2>
+        <p class="hint">Свежие дела модерации.</p>
+      </div>
+      <a class="btn ghost sm" href="/g/{{ guild.id }}/moderation">Все</a>
+    </div>
+    {% if cases %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Дело</th><th>Участник</th><th>Тип</th><th>Когда</th><th></th></tr></thead>
+          <tbody>
+          {% for case in cases %}
+            <tr>
+              <td class="mono">#{{ case.id }}</td>
+              <td>
+                {% set member = guild.get_member(case.user_id) %}
+                {{ member.display_name if member else case.user_id }}
+              </td>
+              <td><span class="badge {{ 'red' if case.kind == 'ban' else 'yellow' if case.kind in ['timeout', 'mute'] else 'gray' }}">{{ case.kind_label }}</span></td>
+              <td class="muted nowrap"><time datetime="{{ case.created_at }}" data-local>{{ case.created_at|dt }}</time></td>
+              <td>{% if case.active %}<span class="badge green">активно</span>{% else %}<span class="badge gray">закрыто</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Наказаний пока нет.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Топ по опыту</h2>
+        <p class="hint">Самые активные участники.</p>
+      </div>
+      <a class="btn ghost sm" href="/g/{{ guild.id }}/xp">Подробнее</a>
+    </div>
+    {% if top %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Участник</th><th>Уровень</th><th class="num">XP</th></tr></thead>
+          <tbody>
+          {% for entry in top %}
+            <tr>
+              <td class="muted">{{ loop.index }}</td>
+              <td>
+                {% set member = guild.get_member(entry.user_id) %}
+                {{ member.display_name if member else entry.user_id }}
+              </td>
+              <td><span class="badge brand">{{ entry.level }}</span></td>
+              <td class="num">{{ entry.xp|num }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Опыт ещё никто не получал.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Активные предупреждения</h2>
+        <p class="hint">Последние выданные варны.</p>
+      </div>
+      <a class="btn ghost sm" href="/g/{{ guild.id }}/moderation">Настроить</a>
+    </div>
+    {% if warnings %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Участник</th><th>Причина</th><th>Когда</th></tr></thead>
+          <tbody>
+          {% for warning in warnings %}
+            <tr>
+              <td class="mono">#{{ warning.id }}</td>
+              <td>
+                {% set member = guild.get_member(warning.user_id) %}
+                {{ member.display_name if member else warning.user_id }}
+              </td>
+              <td class="muted">{{ warning.reason|truncate(80) }}</td>
+              <td class="muted nowrap"><time datetime="{{ warning.created_at }}" data-local>{{ warning.created_at|dt }}</time></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Активных предупреждений нет.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Быстрые действия</h2>
+    <p class="hint">Что можно настроить прямо сейчас.</p>
+    <div class="actions">
+      <a class="btn secondary" href="/g/{{ guild.id }}/logs">📜 Канал логов</a>
+      <a class="btn secondary" href="/g/{{ guild.id }}/autoroles">🎭 Автороли</a>
+      <a class="btn secondary" href="/g/{{ guild.id }}/panels">🔘 Панель ролей</a>
+      <a class="btn secondary" href="/g/{{ guild.id }}/xp">📈 Опыт и уровни</a>
+      <a class="btn secondary" href="/g/{{ guild.id }}/achievements">🏆 Достижения</a>
+      <a class="btn secondary" href="/g/{{ guild.id }}/shop">🛒 Магазин</a>
+    </div>
+    <div class="actions" style="margin-top:18px;">
+      <span class="chip">Задержка: {{ latency }} мс</span>
+      <span class="chip">Аптайм: {{ uptime }}</span>
+      <span class="chip">Достижений: {{ counters.achievements }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

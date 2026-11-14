@@ -1,0 +1,109 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+  <h2>Товары магазина</h2>
+  <p class="hint">Участники тратят баллы лояльности и получают роли. Управление доступно здесь и командой <code>/shop</code>.</p>
+  {% if items %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Товар</th><th>Роль</th><th class="num">Цена</th><th class="num">Остаток</th><th>Статус</th><th></th></tr></thead>
+        <tbody>
+        {% for item in items %}
+          {% set role = guild.get_role(item.role_id) %}
+          <tr>
+            <td class="mono">#{{ item.id }}</td>
+            <td>
+              <strong>{{ item.name }}</strong>
+              {% if item.description %}<div class="muted small">{{ item.description }}</div>{% endif %}
+            </td>
+            <td>{% if role %}<span class="chip">{{ role.name }}</span>{% else %}<span class="badge red">удалена</span>{% endif %}</td>
+            <td class="num">{{ item.price|num }} 💎</td>
+            <td class="num">{{ '∞' if item.stock < 0 else item.stock }}</td>
+            <td>{% if item.enabled %}<span class="badge green">включён</span>{% else %}<span class="badge gray">выключен</span>{% endif %}</td>
+            <td class="nowrap">
+              <form method="post" action="/g/{{ guild.id }}/shop/{{ item.id }}/toggle" style="display:inline;">
+                <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+                <button class="btn ghost sm" type="submit">{{ 'Выключить' if item.enabled else 'Включить' }}</button>
+              </form>
+              <form method="post" action="/g/{{ guild.id }}/shop/{{ item.id }}/delete" style="display:inline;">
+                <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+                <button class="btn danger sm" type="submit" data-confirm="Удалить товар «{{ item.name }}»?">Удалить</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">В магазине пока нет товаров.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Новый товар</h2>
+  <form method="post" action="/g/{{ guild.id }}/shop">
+    <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="role_id">Роль</label>
+        <select id="role_id" name="role_id" required>
+          <option value="">— выберите роль —</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="name">Название</label>
+        <input id="name" type="text" name="name" maxlength="80" placeholder="Например, VIP на месяц">
+      </div>
+      <div class="form-row">
+        <label for="price">Цена в баллах</label>
+        <input id="price" type="number" name="price" min="1" max="1000000" value="100" required>
+      </div>
+      <div class="form-row">
+        <label for="stock">Количество</label>
+        <input id="stock" type="number" name="stock" min="-1" max="1000000" value="-1">
+        <span class="desc">-1 — без ограничений.</span>
+      </div>
+      <div class="form-row full">
+        <label for="description">Описание</label>
+        <input id="description" type="text" name="description" maxlength="300" placeholder="Что получает покупатель">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" type="submit">Добавить товар</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Последние покупки</h2>
+  {% if purchases %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Участник</th><th>Товар</th><th class="num">Цена</th><th>Когда</th></tr></thead>
+        <tbody>
+        {% for purchase in purchases %}
+          <tr>
+            <td>
+              {% set member = guild.get_member(purchase.user_id) %}
+              {{ member.display_name if member else purchase.user_id }}
+            </td>
+            <td>
+              {% set item = items_by_id.get(purchase.item_id) %}
+              {{ item.name if item else 'удалённый товар' }}
+            </td>
+            <td class="num">{{ purchase.price|num }} 💎</td>
+            <td class="muted nowrap"><time datetime="{{ purchase.created_at }}" data-local>{{ purchase.created_at|dt }}</time></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Покупок пока не было.</div>
+  {% endif %}
+</div>
+{% endblock %}

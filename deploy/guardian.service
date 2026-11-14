@@ -1,0 +1,33 @@
+[Unit]
+Description=Guardian Discord moderation bot and dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=guardian
+Group=guardian
+WorkingDirectory=/opt/guardian
+EnvironmentFile=/etc/guardian/guardian.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/guardian/.venv/bin/python /opt/guardian/run.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGINT
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/guardian
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

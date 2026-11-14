@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="post" action="/g/{{ guild.id }}/autoroles">
+  <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+
+  <div class="card">
+    <h2>Роли при входе</h2>
+    <p class="hint">
+      Эти роли бот выдаст участнику сразу после присоединения к серверу.
+      Бот должен стоять выше этих ролей в списке ролей.
+    </p>
+    <div class="form-row">
+      <label for="autorole_ids">Автороли</label>
+      <select id="autorole_ids" name="autorole_ids" multiple size="14">
+        {% for role in roles %}
+          <option value="{{ role.id }}" {{ 'selected' if role.id in cfg.autorole_ids }}>{{ role.name }}</option>
+        {% endfor %}
+      </select>
+      <span class="desc">Удерживайте Ctrl/Cmd, чтобы выбрать несколько ролей.</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Поведение</h2>
+    <div class="switch-grid">
+      <label class="check">
+        <input type="checkbox" name="restore_roles" value="1" {{ 'checked' if cfg.restore_roles }}>
+        <span>
+          <span class="t">Восстанавливать роли после повторного входа</span>
+          <span class="d">Бот запомнит роли при выходе и вернёт их при повторном входе. Включайте осторожно: вместе с обычными ролями вернутся и служебные.</span>
+        </span>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="autorole_bots" value="1" {{ 'checked' if cfg.autorole_bots }}>
+        <span>
+          <span class="t">Выдавать автороли ботам</span>
+          <span class="d">По умолчанию автороли получают только обычные участники.</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">Сохранить</button>
+  </div>
+</form>
+{% endblock %}

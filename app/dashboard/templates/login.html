@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Вход · Guardian{% endblock %}
+{% block body %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">🛡️</div>
+    <h1>Guardian</h1>
+    <p class="lead">Модерация, логи, автороли и прогресс для вашего Discord-сервера.</p>
+
+    {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+    {% if ok %}<div class="alert ok">{{ ok }}</div>{% endif %}
+
+    <ul class="feature-list">
+      <li><span class="ico">📜</span> Логи входов, сообщений, голоса и модерации</li>
+      <li><span class="ico">🛡️</span> Предупреждения, тайм-ауты и временные баны</li>
+      <li><span class="ico">🎭</span> Автороли и панели ролей с кнопками</li>
+      <li><span class="ico">📈</span> Опыт, лояльность, достижения и магазин</li>
+    </ul>
+
+    {% if oauth_configured %}
+      <a class="btn discord" href="/login">Войти через Discord</a>
+    {% else %}
+      <div class="alert err">
+        OAuth не настроен. Укажите <code>DISCORD_CLIENT_ID</code> и
+        <code>DISCORD_CLIENT_SECRET</code> в файле <code>.env</code>.
+      </div>
+    {% endif %}
+
+    {% if session %}
+      <div class="actions">
+        <a class="btn secondary" href="/">Вернуться к серверам</a>
+      </div>
+    {% endif %}
+
+    <p class="small muted" style="margin-top:18px;">
+      Для управления сервером нужны права «Управлять сервером» или «Администратор».
+      Бот должен находиться на сервере.
+    </p>
+  </div>
+</div>
+{% endblock %}

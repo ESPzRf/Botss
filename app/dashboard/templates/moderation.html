@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="post" action="/g/{{ guild.id }}/moderation">
+  <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+
+  <div class="card">
+    <h2>Роль мута</h2>
+    <p class="hint">
+      Если роль выбрана, команда <code>/mute</code> будет выдавать её на срок.
+      Если не выбрана — используется встроенный тайм-аут Discord (до 28 дней).
+    </p>
+    <div class="form-row">
+      <label for="mute_role_id">Роль мута</label>
+      <select id="mute_role_id" name="mute_role_id">
+        <option value="">— использовать тайм-аут Discord —</option>
+        {% for role in roles %}
+          <option value="{{ role.id }}" {{ 'selected' if cfg.mute_role_id == role.id }}>{{ role.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Автонаказания за предупреждения</h2>
+    <p class="hint">
+      Когда у участника становится ровно столько активных предупреждений,
+      бот автоматически применяет действие. Пустая длительность у бана — навсегда.
+    </p>
+
+    <div id="esc-list">
+      {% for rule in cfg.escalations %}
+        <div class="esc-row">
+          <input type="number" name="esc_count" min="1" max="100" value="{{ rule.count }}" placeholder="Порог" aria-label="Порог">
+          <select name="esc_action" aria-label="Действие">
+            <option value="timeout" {{ 'selected' if rule.action == 'timeout' }}>Тайм-аут</option>
+            <option value="mute" {{ 'selected' if rule.action == 'mute' }}>Мут</option>
+            <option value="kick" {{ 'selected' if rule.action == 'kick' }}>Кик</option>
+            <option value="ban" {{ 'selected' if rule.action == 'ban' }}>Бан</option>
+          </select>
+          <input class="duration" type="text" name="esc_duration" value="{{ duration_input(rule.seconds) }}" placeholder="1h / 7d / пусто = навсегда" aria-label="Длительность">
+          <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+        </div>
+      {% endfor %}
+      {% if not cfg.escalations %}
+        <div class="esc-row">
+          <input type="number" name="esc_count" min="1" max="100" value="" placeholder="Порог" aria-label="Порог">
+          <select name="esc_action" aria-label="Действие">
+            <option value="timeout">Тайм-аут</option>
+            <option value="mute">Мут</option>
+            <option value="kick">Кик</option>
+            <option value="ban">Бан</option>
+          </select>
+          <input class="duration" type="text" name="esc_duration" value="" placeholder="1h / 7d / пусто = навсегда" aria-label="Длительность">
+          <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+        </div>
+      {% endif %}
+    </div>
+
+    <template id="esc-template">
+      <div class="esc-row">
+        <input type="number" name="esc_count" min="1" max="100" value="" placeholder="Порог" aria-label="Порог">
+        <select name="esc_action" aria-label="Действие">
+          <option value="timeout">Тайм-аут</option>
+          <option value="mute">Мут</option>
+          <option value="kick">Кик</option>
+          <option value="ban">Бан</option>
+        </select>
+        <input class="duration" type="text" name="esc_duration" value="" placeholder="1h / 7d / пусто = навсегда" aria-label="Длительность">
+        <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+      </div>
+    </template>
+
+    <div class="actions">
+      <button class="btn secondary sm" type="button" data-add-escalation>+ Добавить правило</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">Сохранить</button>
+  </div>
+</form>
+
+<div class="grid cols-2" style="margin-top:18px;">
+  <div class="card">
+    <h2>Активные наказания</h2>
+    <p class="hint">Снимаются автоматически по истечении срока.</p>
+    {% if active_cases %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Дело</th><th>Участник</th><th>Тип</th><th>До</th></tr></thead>
+          <tbody>
+          {% for case in active_cases %}
+            <tr>
+              <td class="mono">#{{ case.id }}</td>
+              <td>
+                {% set member = guild.get_member(case.user_id) %}
+                {{ member.display_name if member else case.user_id }}
+              </td>
+              <td><span class="badge yellow">{{ case.kind_label }}</span></td>
+              <td class="muted nowrap">
+                {% if case.expires_at %}<time datetime="{{ case.expires_at }}" data-local>{{ case.expires_at|dt }}</time>{% else %}бессрочно{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Активных наказаний нет.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Свежие предупреждения</h2>
+    <p class="hint">Последние активные варны на сервере.</p>
+    {% if recent_warnings %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>Участник</th><th>Причина</th></tr></thead>
+          <tbody>
+          {% for warning in recent_warnings %}
+            <tr>
+              <td class="mono">#{{ warning.id }}</td>
+              <td>
+                {% set member = guild.get_member(warning.user_id) %}
+                {{ member.display_name if member else warning.user_id }}
+              </td>
+              <td class="muted">{{ warning.reason|truncate(70) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">Предупреждений нет.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

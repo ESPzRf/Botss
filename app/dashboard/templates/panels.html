@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card">
+  <h2>Существующие панели</h2>
+  <p class="hint">Панель — это сообщение с кнопками. Участники нажимают кнопку и получают роль.</p>
+  {% if panels %}
+    <div class="panel-grid">
+      {% for entry in panels %}
+        {% set panel = entry.panel %}
+        <div class="panel-box">
+          <h3>{{ panel.title }}</h3>
+          <div class="panel-meta">
+            <span class="badge {{ 'brand' if panel.mode == 'unique' else 'gray' }}">
+              {{ 'один выбор' if panel.mode == 'unique' else 'множественный выбор' }}
+            </span>
+            <span>{% if entry.channel %}#{{ entry.channel.name }}{% else %}канал удалён{% endif %}</span>
+            {% if panel.message_id %}
+              <a href="https://discord.com/channels/{{ guild.id }}/{{ panel.channel_id }}/{{ panel.message_id }}" target="_blank" rel="noreferrer">сообщение ↗</a>
+            {% else %}
+              <span class="badge yellow">не опубликована</span>
+            {% endif %}
+          </div>
+          <div style="margin-top:9px;">
+            {% for option in entry.options %}
+              {% set role = guild.get_role(option.role_id) %}
+              <span class="chip">{{ role.name if role else 'роль удалена' }}</span>
+            {% endfor %}
+            {% if not entry.options %}<span class="muted small">Нет ролей</span>{% endif %}
+          </div>
+          <div class="actions">
+            <form method="post" action="/g/{{ guild.id }}/panels/{{ panel.id }}/publish">
+              <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+              <button class="btn secondary sm" type="submit">Опубликовать</button>
+            </form>
+            <form method="post" action="/g/{{ guild.id }}/panels/{{ panel.id }}/delete">
+              <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+              <button class="btn danger sm" type="submit" data-confirm="Удалить панель «{{ panel.title }}»?">Удалить</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">Панелей пока нет. Создайте первую ниже.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Новая панель</h2>
+  <p class="hint">Выберите канал и до 25 ролей. После создания панель сразу появится в канале.</p>
+  <form method="post" action="/g/{{ guild.id }}/panels">
+    <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="channel_id">Канал</label>
+        <select id="channel_id" name="channel_id" required>
+          <option value="">— выберите канал —</option>
+          {% for channel in channels %}
+            <option value="{{ channel.id }}">#{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="mode">Режим</label>
+        <select id="mode" name="mode">
+          <option value="toggle">Множественный выбор (toggle)</option>
+          <option value="unique">Только одна роль из панели</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="title">Заголовок</label>
+        <input id="title" type="text" name="title" maxlength="100" value="Роли">
+      </div>
+      <div class="form-row">
+        <label for="description">Описание</label>
+        <input id="description" type="text" name="description" maxlength="1000" placeholder="Нажмите на кнопку, чтобы получить роль">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="role-search">Роли панели</label>
+      <input id="role-search" type="search" placeholder="Поиск по названию роли…" data-role-search="#role-list" autocomplete="off">
+      {% if roles %}
+        <div id="role-list" class="role-list">
+          {% for role in roles %}
+            <label class="role-option" data-name="{{ role.name|lower }}">
+              <input type="checkbox" name="role_ids" value="{{ role.id }}">
+              <span class="role-dot" style="background: {{ role.color }};"></span>
+              <span>{{ role.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">Нет ролей, которые бот может выдавать. Поднимите роль бота выше нужных ролей.</div>
+      {% endif %}
+      <span class="desc">Можно выбрать не больше 25 ролей. Роли должны быть ниже роли бота.</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" type="submit">Создать и опубликовать</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

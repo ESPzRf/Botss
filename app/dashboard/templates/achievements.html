@@ -1,0 +1,140 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="post" action="/g/{{ guild.id }}/achievements">
+  <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+  <div class="card">
+    <h2>Система достижений</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="check" style="margin-top:22px;">
+          <input type="checkbox" name="achievements_enabled" value="1" {{ 'checked' if cfg.achievements_enabled }}>
+          <span>
+            <span class="t">Достижения включены</span>
+            <span class="d">Проверяются автоматически и при получении опыта.</span>
+          </span>
+        </label>
+      </div>
+      <div class="form-row">
+        <label for="achievements_channel_id">Канал анонсов</label>
+        <select id="achievements_channel_id" name="achievements_channel_id">
+          <option value="">— системный канал —</option>
+          {% for channel in channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if cfg.achievements_channel_id == channel.id }}>#{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" type="submit">Сохранить</button>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <h2>Все достижения</h2>
+  <p class="hint">Стартовый набор создаётся автоматически. Свои достижения добавляйте ниже.</p>
+  {% if achievements %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Достижение</th><th>Условие</th><th>Награда</th><th>Статус</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for achievement in achievements %}
+          <tr>
+            <td>
+              <strong>{{ achievement.emoji }} {{ achievement.title }}</strong>
+              <div class="muted small">{{ achievement.description }}</div>
+            </td>
+            <td class="nowrap">
+              {{ condition_labels.get(achievement.condition_type, achievement.condition_type) }}
+              <span class="muted">≥ {{ achievement.threshold }}</span>
+            </td>
+            <td>
+              {% if achievement.reward_role_id %}
+                {% set reward_role = guild.get_role(achievement.reward_role_id) %}
+                <span class="chip">{{ reward_role.name if reward_role else 'роль удалена' }}</span>
+              {% endif %}
+              {% if achievement.reward_loyalty %}
+                <span class="chip">+{{ achievement.reward_loyalty }} 💎</span>
+              {% endif %}
+              {% if not achievement.reward_role_id and not achievement.reward_loyalty %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if achievement.enabled %}
+                <span class="badge green">включено</span>
+              {% else %}
+                <span class="badge gray">выключено</span>
+              {% endif %}
+            </td>
+            <td class="nowrap">
+              <form method="post" action="/g/{{ guild.id }}/achievements/{{ achievement.id }}/toggle" style="display:inline;">
+                <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+                <button class="btn ghost sm" type="submit">{{ 'Выключить' if achievement.enabled else 'Включить' }}</button>
+              </form>
+              <form method="post" action="/g/{{ guild.id }}/achievements/{{ achievement.id }}/delete" style="display:inline;">
+                <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+                <button class="btn danger sm" type="submit" data-confirm="Удалить достижение «{{ achievement.title }}»?">Удалить</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Достижений пока нет. Создайте первое ниже.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Новое достижение</h2>
+  <form method="post" action="/g/{{ guild.id }}/achievements/create">
+    <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="title">Название</label>
+        <input id="title" type="text" name="title" maxlength="80" placeholder="Например, Ночной житель" required>
+      </div>
+      <div class="form-row">
+        <label for="emoji">Эмодзи</label>
+        <input id="emoji" type="text" name="emoji" maxlength="8" value="🏆">
+      </div>
+      <div class="form-row full">
+        <label for="description">Описание</label>
+        <input id="description" type="text" name="description" maxlength="300" placeholder="Что нужно сделать">
+      </div>
+      <div class="form-row">
+        <label for="condition_type">Условие</label>
+        <select id="condition_type" name="condition_type">
+          {% for value, label in condition_labels.items() %}
+            <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="threshold">Порог</label>
+        <input id="threshold" type="number" name="threshold" min="1" max="10000000" value="10" required>
+      </div>
+      <div class="form-row">
+        <label for="reward_role_id">Роль в награду</label>
+        <select id="reward_role_id" name="reward_role_id">
+          <option value="">— без роли —</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="reward_loyalty">Баллы лояльности в награду</label>
+        <input id="reward_loyalty" type="number" name="reward_loyalty" min="0" max="1000000" value="0">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" type="submit">Создать достижение</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

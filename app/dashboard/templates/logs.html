@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="post" action="/g/{{ guild.id }}/logs">
+  <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+
+  <div class="card">
+    <h2>Куда отправлять логи</h2>
+    <p class="hint">
+      Если канал не выбран, бот не пишет логи. Для действий модераторов можно
+      указать отдельный канал — он используется для предупреждений, муты и банов.
+    </p>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="log_channel_id">Канал логов</label>
+        <select id="log_channel_id" name="log_channel_id">
+          <option value="">— не выбран —</option>
+          {% for channel in channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if cfg.log_channel_id == channel.id }}>#{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="mod_log_channel_id">Канал модерации</label>
+        <select id="mod_log_channel_id" name="mod_log_channel_id">
+          <option value="">— как канал логов —</option>
+          {% for channel in channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if cfg.mod_log_channel_id == channel.id }}>#{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>События</h2>
+    <p class="hint">Включите только те события, которые нужны. Изменения применяются сразу после сохранения.</p>
+    {% for group_name, events in event_groups %}
+      <div class="event-group">
+        <h3>{{ group_name }}</h3>
+        <div class="switch-grid">
+          {% for key, label, description in events %}
+            <label class="check">
+              <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if cfg.event_enabled(key) }}>
+              <span>
+                <span class="t">{{ label }}</span>
+                <span class="d">{{ description }}</span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2>Исключения</h2>
+    <p class="hint">События из выбранных каналов и от указанных пользователей не попадут в лог.</p>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="ignore_channels">Игнорируемые каналы</label>
+        <select id="ignore_channels" name="ignore_channels" multiple size="8">
+          {% for channel in all_channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if channel.id in cfg.ignore_channels }}>{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+        <span class="desc">Удерживайте Ctrl/Cmd, чтобы выбрать несколько.</span>
+      </div>
+      <div class="form-row">
+        <label for="ignore_users">Игнорируемые пользователи</label>
+        <input id="ignore_users" type="text" name="ignore_users" value="{{ cfg.ignore_users|join(', ') }}" placeholder="123456789012345678, 987654321098765432">
+        <span class="desc">ID пользователей через запятую. Их сообщения и действия не логируются.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">Сохранить настройки</button>
+  </div>
+</form>
+
+<div class="card" style="margin-top:18px;">
+  <h2>Проверка</h2>
+  <p class="hint">Отправьте тестовое сообщение в выбранный канал логов, чтобы убедиться, что бот видит канал и имеет право писать.</p>
+  <form method="post" action="/g/{{ guild.id }}/test-log">
+    <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+    <button class="btn secondary" type="submit">Отправить тестовый лог</button>
+  </form>
+</div>
+{% endblock %}

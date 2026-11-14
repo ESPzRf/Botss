@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Ошибка {{ status }} · Guardian{% endblock %}
+{% block body %}
+<div class="error-wrap">
+  <div class="error-card">
+    <div class="error-code">{{ status }}</div>
+    <h1>Что-то не так</h1>
+    <p>{{ message }}</p>
+    <div class="actions" style="justify-content:center;">
+      <a class="btn primary" href="/">На главную</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

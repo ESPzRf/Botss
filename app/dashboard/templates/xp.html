@@ -1,0 +1,185 @@
+{% extends "layout.html" %}
+{% block content %}
+<form method="post" action="/g/{{ guild.id }}/xp">
+  <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+
+  <div class="card">
+    <h2>Основные настройки</h2>
+    <p class="hint">Опыт начисляется за сообщения и время в голосовых каналах. Уровни открывают роли ниже.</p>
+    <div class="switch-grid">
+      <label class="check">
+        <input type="checkbox" name="xp_enabled" value="1" {{ 'checked' if cfg.xp_enabled }}>
+        <span>
+          <span class="t">Система опыта включена</span>
+          <span class="d">Сообщения и голос дают опыт, работают уровни.</span>
+        </span>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="loyalty_enabled" value="1" {{ 'checked' if cfg.loyalty_enabled }}>
+        <span>
+          <span class="t">Лояльность включена</span>
+          <span class="d">Участники получают баллы для магазина ролей.</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Начисления</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="xp_min">Минимум опыта за сообщение</label>
+        <input id="xp_min" type="number" name="xp_min" min="0" max="1000" value="{{ cfg.xp_min }}">
+      </div>
+      <div class="form-row">
+        <label for="xp_max">Максимум опыта за сообщение</label>
+        <input id="xp_max" type="number" name="xp_max" min="0" max="1000" value="{{ cfg.xp_max }}">
+      </div>
+      <div class="form-row">
+        <label for="xp_cooldown">Кулдаун между сообщениями, сек</label>
+        <input id="xp_cooldown" type="number" name="xp_cooldown" min="0" max="86400" value="{{ cfg.xp_cooldown }}">
+        <span class="desc">0 — начислять за каждое сообщение.</span>
+      </div>
+      <div class="form-row">
+        <label for="xp_voice_per_min">Опыт за минуту в голосе</label>
+        <input id="xp_voice_per_min" type="number" name="xp_voice_per_min" min="0" max="1000" value="{{ cfg.xp_voice_per_min }}">
+        <span class="desc">Начисляется, если в канале есть ещё хотя бы один человек.</span>
+      </div>
+      <div class="form-row">
+        <label for="loyalty_per_message">Баллы за сообщение</label>
+        <input id="loyalty_per_message" type="number" name="loyalty_per_message" min="0" max="1000" value="{{ cfg.loyalty_per_message }}">
+      </div>
+      <div class="form-row">
+        <label for="loyalty_per_voice_min">Баллы за минуту в голосе</label>
+        <input id="loyalty_per_voice_min" type="number" name="loyalty_per_voice_min" min="0" max="1000" value="{{ cfg.loyalty_per_voice_min }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Уведомления об уровнях</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="level_up_channel_id">Канал уведомлений</label>
+        <select id="level_up_channel_id" name="level_up_channel_id">
+          <option value="">— системный канал —</option>
+          {% for channel in channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if cfg.level_up_channel_id == channel.id }}>#{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row full">
+        <label for="level_up_message">Текст сообщения</label>
+        <textarea id="level_up_message" name="level_up_message" maxlength="500">{{ cfg.level_up_message }}</textarea>
+        <span class="desc">Доступны <code>{user}</code>, <code>{level}</code> и <code>{xp}</code>.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Исключения</h2>
+    <div class="form-grid">
+      <div class="form-row">
+        <label for="xp_ignore_channels">Каналы без опыта</label>
+        <select id="xp_ignore_channels" name="xp_ignore_channels" multiple size="8">
+          {% for channel in all_channels %}
+            <option value="{{ channel.id }}" {{ 'selected' if channel.id in cfg.xp_ignore_channels }}>{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="xp_ignore_roles">Роли без опыта</label>
+        <select id="xp_ignore_roles" name="xp_ignore_roles" multiple size="8">
+          {% for role in all_roles %}
+            <option value="{{ role.id }}" {{ 'selected' if role.id in cfg.xp_ignore_roles }}>{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Роли за уровни</h2>
+    <p class="hint">Когда участник достигает уровня, бот выдаёт роль. Роли должны быть ниже роли бота.</p>
+    <div id="lr-list">
+      {% for item in cfg.level_roles %}
+        <div class="lr-row">
+          <input type="number" name="lr_level" min="1" max="500" value="{{ item.level }}" placeholder="Уровень" aria-label="Уровень">
+          <select name="lr_role" aria-label="Роль">
+            <option value="">— роль —</option>
+            {% for role in roles %}
+              <option value="{{ role.id }}" {{ 'selected' if role.id == item.role_id }}>{{ role.name }}</option>
+            {% endfor %}
+          </select>
+          <span></span>
+          <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+        </div>
+      {% endfor %}
+      {% if not cfg.level_roles %}
+        <div class="lr-row">
+          <input type="number" name="lr_level" min="1" max="500" value="" placeholder="Уровень" aria-label="Уровень">
+          <select name="lr_role" aria-label="Роль">
+            <option value="">— роль —</option>
+            {% for role in roles %}
+              <option value="{{ role.id }}">{{ role.name }}</option>
+            {% endfor %}
+          </select>
+          <span></span>
+          <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+        </div>
+      {% endif %}
+    </div>
+
+    <template id="lr-template">
+      <div class="lr-row">
+        <input type="number" name="lr_level" min="1" max="500" value="" placeholder="Уровень" aria-label="Уровень">
+        <select name="lr_role" aria-label="Роль">
+          <option value="">— роль —</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.name }}</option>
+          {% endfor %}
+        </select>
+        <span></span>
+        <button class="icon-btn" type="button" data-remove-row title="Удалить">×</button>
+      </div>
+    </template>
+
+    <div class="actions">
+      <button class="btn secondary sm" type="button" data-add-level-role>+ Добавить награду</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" type="submit">Сохранить</button>
+  </div>
+</form>
+
+<div class="card" style="margin-top:18px;">
+  <h2>Топ по опыту</h2>
+  <p class="hint">Первые 15 участников сервера.</p>
+  {% if leaderboard %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Участник</th><th>Уровень</th><th class="num">XP</th><th class="num">Сообщения</th><th class="num">Голос</th></tr></thead>
+        <tbody>
+        {% for entry in leaderboard %}
+          <tr>
+            <td class="muted">{{ loop.index }}</td>
+            <td>
+              {% set member = guild.get_member(entry.user_id) %}
+              {{ member.display_name if member else entry.user_id }}
+            </td>
+            <td><span class="badge brand">{{ entry.level }}</span></td>
+            <td class="num">{{ entry.xp|num }}</td>
+            <td class="num">{{ entry.messages|num }}</td>
+            <td class="num">{{ entry.voice_minutes }} мин</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">Опыт ещё никто не получал.</div>
+  {% endif %}
+</div>
+{% endblock %}

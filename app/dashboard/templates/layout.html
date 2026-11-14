@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} · {{ guild.name }}{% endblock %}
+{% block body %}
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="logo">🛡️</span>
+      <span>
+        <span class="brand-name">Guardian</span>
+        <span class="brand-sub">moderation suite</span>
+      </span>
+    </a>
+
+    <div class="guild-chip">
+      {% if guild.icon %}
+        <img src="{{ guild.icon.url }}" alt="{{ guild.name }}">
+      {% else %}
+        <span class="fallback">{{ guild.name[0]|upper }}</span>
+      {% endif %}
+      <span class="name">{{ guild.name }}</span>
+    </div>
+
+    <nav class="nav">
+      <a href="/g/{{ guild.id }}" class="{{ 'active' if active == 'overview' }}"><span class="ico">📊</span>Обзор</a>
+      <a href="/g/{{ guild.id }}/logs" class="{{ 'active' if active == 'logs' }}"><span class="ico">📜</span>Логи</a>
+      <a href="/g/{{ guild.id }}/autoroles" class="{{ 'active' if active == 'autoroles' }}"><span class="ico">🎭</span>Автороли</a>
+      <a href="/g/{{ guild.id }}/panels" class="{{ 'active' if active == 'panels' }}"><span class="ico">🔘</span>Панели ролей</a>
+      <a href="/g/{{ guild.id }}/moderation" class="{{ 'active' if active == 'moderation' }}"><span class="ico">🛡️</span>Модерация</a>
+      <a href="/g/{{ guild.id }}/xp" class="{{ 'active' if active == 'xp' }}"><span class="ico">📈</span>Опыт</a>
+      <a href="/g/{{ guild.id }}/achievements" class="{{ 'active' if active == 'achievements' }}"><span class="ico">🏆</span>Достижения</a>
+      <a href="/g/{{ guild.id }}/shop" class="{{ 'active' if active == 'shop' }}"><span class="ico">🛒</span>Магазин</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span>Guardian 1.0</span>
+      <a href="{{ settings.dashboard_url }}" target="_blank" rel="noreferrer">{{ settings.dashboard_url }}</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">{{ page_title }}</h1>
+        <div class="page-sub">{{ guild.name }}{% if guild.member_count %} · {{ guild.member_count }} участников{% endif %}</div>
+      </div>
+      <div class="topbar-right">
+        <span class="status">
+          <span class="dot {{ 'ok' if bot_ready else 'off' }}"></span>
+          {{ 'бот онлайн' if bot_ready else 'бот офлайн' }}
+        </span>
+        <span class="user">
+          <img class="avatar" src="{{ avatar_url(session.user_id, session.avatar) }}" alt="">
+          <span>{{ session.username }}</span>
+        </span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+          <button class="btn ghost sm" type="submit">Выйти</button>
+        </form>
+      </div>
+    </div>
+
+    {% if ok %}<div class="alert ok">{{ ok }}</div>{% endif %}
+    {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
