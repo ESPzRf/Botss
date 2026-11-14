@@ -55,6 +55,18 @@ def info(title: str, description: str | None = None) -> discord.Embed:
     return base(title, description, color=COLOR_BRAND)
 
 
+def apply_user_avatar(embed: discord.Embed, user: discord.abc.User | None) -> None:
+    """Ставит аватар участника в правый верхний угол эмбеда."""
+    if user is None:
+        return
+    avatar = getattr(user, "display_avatar", None)
+    if avatar is None:
+        return
+    url = getattr(avatar, "url", None)
+    if url:
+        embed.set_thumbnail(url=url)
+
+
 def log_embed(title: str, description: str | None = None, *, color: int = COLOR_LOG) -> discord.Embed:
     embed = base(title, description, color=color)
     return embed
@@ -96,6 +108,7 @@ def mod_action_embed(
     extra: Iterable[tuple[str, str]] = (),
 ) -> discord.Embed:
     embed = base(title, color=color)
+    apply_user_avatar(embed, target)
     user_field(embed, "Участник", target)
     user_field(embed, "Модератор", moderator)
     reason_field(embed, reason)

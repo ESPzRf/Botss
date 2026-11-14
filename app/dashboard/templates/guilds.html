@@ -1,23 +1,24 @@
 {% extends "base.html" %}
+{% from "components.html" import icon %}
 {% block title %}Мои серверы · Guardian{% endblock %}
 {% block body %}
 <header class="public-header">
   <a class="brand" href="/">
-    <span class="logo">🛡️</span>
-    <span>
+    <span class="logo">{{ icon('shield') }}</span>
+    <span class="brand-text">
       <span class="brand-name">Guardian</span>
       <span class="brand-sub">moderation suite</span>
     </span>
   </a>
-  <div class="topbar-right">
-    <span class="user">
+  <div class="topbar-actions">
+    <div class="user-chip">
       <img class="avatar" src="{{ avatar_url(session.user_id, session.avatar) }}" alt="">
-      <span>{{ session.username }}</span>
-    </span>
-    <form method="post" action="/logout">
-      <input type="hidden" name="_csrf" value="{{ session.csrf }}">
-      <button class="btn ghost sm" type="submit">Выйти</button>
-    </form>
+      <span class="user-name">{{ session.username }}</span>
+      <form method="post" action="/logout">
+        <input type="hidden" name="_csrf" value="{{ session.csrf }}">
+        <button class="user-logout" type="submit" title="Выйти" aria-label="Выйти">{{ icon('logout') }}</button>
+      </form>
+    </div>
   </div>
 </header>
 

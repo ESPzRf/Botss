@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "components.html" import role_picker %}
 {% block content %}
 <div class="card">
   <h2>Существующие панели</h2>
@@ -78,21 +79,8 @@
     </div>
 
     <div class="form-row">
-      <label for="role-search">Роли панели</label>
-      <input id="role-search" type="search" placeholder="Поиск по названию роли…" data-role-search="#role-list" autocomplete="off">
-      {% if roles %}
-        <div id="role-list" class="role-list">
-          {% for role in roles %}
-            <label class="role-option" data-name="{{ role.name|lower }}">
-              <input type="checkbox" name="role_ids" value="{{ role.id }}">
-              <span class="role-dot" style="background: {{ role.color }};"></span>
-              <span>{{ role.name }}</span>
-            </label>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty">Нет ролей, которые бот может выдавать. Поднимите роль бота выше нужных ролей.</div>
-      {% endif %}
+      <span class="label">Роли панели</span>
+      {{ role_picker('role_ids', roles, [], 'Роли не выбраны', max_items=25) }}
       <span class="desc">Можно выбрать не больше 25 ролей. Роли должны быть ниже роли бота.</span>
     </div>
 

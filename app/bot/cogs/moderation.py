@@ -349,7 +349,8 @@ class Moderation(commands.Cog):
         await self._log(
             interaction.guild,
             title="Предупреждение снято",
-            target=discord.Object(id=warning.user_id),  # type: ignore[arg-type]
+            target=interaction.guild.get_member(warning.user_id)
+            or discord.Object(id=warning.user_id),
             moderator=interaction.user,
             reason=reason or "Снято модератором",
             color=embeds.COLOR_OK,
@@ -997,7 +998,8 @@ class Moderation(commands.Cog):
         await self._log(
             interaction.guild,
             title="Причина наказания изменена",
-            target=discord.Object(id=case.user_id),  # type: ignore[arg-type]
+            target=interaction.guild.get_member(case.user_id)
+            or discord.Object(id=case.user_id),
             moderator=interaction.user,
             reason=reason,
             case=case,
@@ -1048,7 +1050,8 @@ class Moderation(commands.Cog):
         await self._log(
             interaction.guild,
             title="Наказание завершено досрочно",
-            target=discord.Object(id=case.user_id),  # type: ignore[arg-type]
+            target=interaction.guild.get_member(case.user_id)
+            or discord.Object(id=case.user_id),
             moderator=interaction.user,
             reason=reason or "Завершено модератором",
             case=case,

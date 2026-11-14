@@ -6,6 +6,7 @@ import logging
 
 import discord
 
+from app.bot.embeds import apply_user_avatar
 from app.bot.runtime import Runtime
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ async def send_event_log(
     *,
     channel: discord.abc.GuildChannel | None = None,
     user: discord.abc.User | None = None,
+    avatar_user: discord.abc.User | None = None,
 ) -> bool:
     """Отправляет эмбед, если событие включено и канал настроен."""
     try:
@@ -53,6 +55,8 @@ async def send_event_log(
 
     if not isinstance(target, (discord.TextChannel, discord.Thread)):
         return False
+
+    apply_user_avatar(embed, avatar_user or user)
 
     try:
         await target.send(

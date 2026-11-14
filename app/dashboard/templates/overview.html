@@ -1,22 +1,27 @@
 {% extends "layout.html" %}
+{% from "components.html" import icon %}
 {% block content %}
 <div class="grid stats">
   <div class="card stat">
+    <div class="stat-icon">{{ icon('users') }}</div>
     <div class="label">Участники</div>
     <div class="value">{{ member_count }}</div>
     <div class="sub">на сервере сейчас</div>
   </div>
   <div class="card stat">
+    <div class="stat-icon">{{ icon('alert') }}</div>
     <div class="label">Предупреждения</div>
     <div class="value">{{ counters.warnings }}</div>
     <div class="sub">активных</div>
   </div>
   <div class="card stat">
+    <div class="stat-icon">{{ icon('mod') }}</div>
     <div class="label">Наказания</div>
     <div class="value">{{ counters.active_cases }}</div>
     <div class="sub">действуют сейчас</div>
   </div>
   <div class="card stat">
+    <div class="stat-icon">{{ icon('activity') }}</div>
     <div class="label">В трекинге</div>
     <div class="value">{{ counters.tracked }}</div>
     <div class="sub">участников с опытом</div>

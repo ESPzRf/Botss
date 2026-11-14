@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "components.html" import channel_picker %}
 {% block content %}
 <form method="post" action="/g/{{ guild.id }}/logs">
   <input type="hidden" name="_csrf" value="{{ session.csrf }}">
@@ -57,13 +58,9 @@
     <p class="hint">События из выбранных каналов и от указанных пользователей не попадут в лог.</p>
     <div class="form-grid">
       <div class="form-row">
-        <label for="ignore_channels">Игнорируемые каналы</label>
-        <select id="ignore_channels" name="ignore_channels" multiple size="8">
-          {% for channel in all_channels %}
-            <option value="{{ channel.id }}" {{ 'selected' if channel.id in cfg.ignore_channels }}>{{ channel.name }}</option>
-          {% endfor %}
-        </select>
-        <span class="desc">Удерживайте Ctrl/Cmd, чтобы выбрать несколько.</span>
+        <span class="label">Игнорируемые каналы</span>
+        {{ channel_picker('ignore_channels', all_channels, cfg.ignore_channels, 'Каналы не выбраны') }}
+        <span class="desc">События из выбранных каналов не попадут в лог.</span>
       </div>
       <div class="form-row">
         <label for="ignore_users">Игнорируемые пользователи</label>

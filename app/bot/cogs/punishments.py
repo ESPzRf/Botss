@@ -86,7 +86,12 @@ class Punishments(commands.Cog):
         )
         embed.add_field(name="Причина", value=case.reason or "не указана", inline=False)
         embed.add_field(name="Итог", value=end_reason, inline=False)
-        await send_mod_action(self.runtime, guild, embed)
+        await send_mod_action(
+            self.runtime,
+            guild,
+            embed,
+            user=member or discord.Object(id=case.user_id),
+        )
 
         if member is not None:
             await try_dm(

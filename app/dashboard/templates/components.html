@@ -1,0 +1,77 @@
+{% macro icon(name, class_name='') -%}
+<svg class="icon {{ class_name }}" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro channel_picker(name, items, selected=[], placeholder='Каналы не выбраны', search_placeholder='Поиск каналов…') %}
+{% set selected_ids = selected or [] %}
+<div class="picker" data-picker>
+  <button class="picker-trigger" type="button" data-picker-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="{{ placeholder }}">
+    <span class="picker-summary" data-picker-summary>Не выбрано</span>
+    <span class="picker-count" data-picker-count hidden>0</span>
+    {{ icon('chevron') }}
+  </button>
+  <div class="picker-menu" data-picker-menu hidden>
+    <div class="picker-search">
+      {{ icon('search') }}
+      <input type="search" placeholder="{{ search_placeholder }}" data-picker-search autocomplete="off">
+    </div>
+    <div class="picker-toolbar">
+      <button type="button" class="picker-link" data-picker-select-all>Выбрать все</button>
+      <button type="button" class="picker-link" data-picker-clear>Снять все</button>
+    </div>
+    <div class="picker-options">
+      {% for channel in items %}
+        {% set kind = channel.type.name if channel.type is defined and channel.type.name is defined else 'text' %}
+        <label class="picker-option" data-picker-option data-name="{{ channel.name|lower }}" data-label="{{ channel.name }}" data-color="">
+          <input type="checkbox" name="{{ name }}" value="{{ channel.id }}" {{ 'checked' if channel.id in selected_ids }}>
+          <span class="picker-check" aria-hidden="true"></span>
+          <span class="picker-kind">{% if kind in ['voice', 'stage_voice'] %}🔊{% elif kind == 'forum' %}💬{% else %}#{% endif %}</span>
+          <span class="picker-label">{{ channel.name }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    <div class="picker-empty" data-picker-no-results hidden>Ничего не найдено</div>
+    {% if not items %}
+      <div class="picker-empty">Нет доступных каналов.</div>
+    {% endif %}
+  </div>
+  <div class="picker-selected" data-picker-selected></div>
+</div>
+{% endmacro %}
+
+{% macro role_picker(name, items, selected=[], placeholder='Роли не выбраны', search_placeholder='Поиск ролей…', max_items=None) %}
+{% set selected_ids = selected or [] %}
+<div class="picker" data-picker {% if max_items %}data-picker-max="{{ max_items }}"{% endif %}>
+  <button class="picker-trigger" type="button" data-picker-trigger aria-haspopup="listbox" aria-expanded="false" aria-label="{{ placeholder }}">
+    <span class="picker-summary" data-picker-summary>Не выбрано</span>
+    <span class="picker-count" data-picker-count hidden>0</span>
+    {{ icon('chevron') }}
+  </button>
+  <div class="picker-menu" data-picker-menu hidden>
+    <div class="picker-search">
+      {{ icon('search') }}
+      <input type="search" placeholder="{{ search_placeholder }}" data-picker-search autocomplete="off">
+    </div>
+    <div class="picker-toolbar">
+      <button type="button" class="picker-link" data-picker-select-all>Выбрать все</button>
+      <button type="button" class="picker-link" data-picker-clear>Снять все</button>
+    </div>
+    <div class="picker-options">
+      {% for role in items %}
+        <label class="picker-option" data-picker-option data-name="{{ role.name|lower }}" data-label="{{ role.name }}" data-color="{{ role.color }}">
+          <input type="checkbox" name="{{ name }}" value="{{ role.id }}" {{ 'checked' if role.id in selected_ids }}>
+          <span class="picker-check" aria-hidden="true"></span>
+          <span class="role-swatch" style="--role-color: {{ role.color }};"></span>
+          <span class="picker-label">{{ role.name }}</span>
+          {% if role.managed %}<span class="picker-tag">интеграция</span>{% endif %}
+        </label>
+      {% endfor %}
+    </div>
+    <div class="picker-empty" data-picker-no-results hidden>Ничего не найдено</div>
+    {% if not items %}
+      <div class="picker-empty">Нет доступных ролей. Проверьте иерархию ролей бота.</div>
+    {% endif %}
+  </div>
+  <div class="picker-selected" data-picker-selected></div>
+</div>
+{% endmacro %}

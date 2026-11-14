@@ -157,6 +157,7 @@ class EventLogs(commands.Cog):
             "message_bulk_delete",
             embed,
             channel=channel,
+            avatar_user=messages[0].author,
         )
 
     @commands.Cog.listener()
@@ -361,7 +362,9 @@ class EventLogs(commands.Cog):
             embed.add_field(name="Лимит", value=f"`{invite.max_uses}`", inline=True)
         if invite.expires_at:
             embed.add_field(name="Истекает", value=embeds.dt(invite.expires_at, "R"), inline=True)
-        await send_event_log(self.runtime, invite.guild, "invite_create", embed)
+        await send_event_log(
+            self.runtime, invite.guild, "invite_create", embed, avatar_user=invite.inviter
+        )
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite: discord.Invite) -> None:
@@ -372,7 +375,9 @@ class EventLogs(commands.Cog):
             f"`{invite.code}` · {getattr(invite.channel, 'mention', '—')}",
             color=embeds.COLOR_LOG,
         )
-        await send_event_log(self.runtime, invite.guild, "invite_delete", embed)
+        await send_event_log(
+            self.runtime, invite.guild, "invite_delete", embed, avatar_user=invite.inviter
+        )
 
     # ── Ветки и сервер ───────────────────────────────────────────────────────
 
@@ -384,7 +389,14 @@ class EventLogs(commands.Cog):
             color=embeds.COLOR_OK,
         )
         embed.add_field(name="Владелец", value=thread.owner.mention if thread.owner else "—", inline=True)
-        await send_event_log(self.runtime, thread.guild, "thread_create", embed, channel=thread.parent)
+        await send_event_log(
+            self.runtime,
+            thread.guild,
+            "thread_create",
+            embed,
+            channel=thread.parent,
+            avatar_user=thread.owner,
+        )
 
     @commands.Cog.listener()
     async def on_thread_delete(self, thread: discord.Thread) -> None:
@@ -393,7 +405,14 @@ class EventLogs(commands.Cog):
             f"`{thread.name}`",
             color=embeds.COLOR_ERROR,
         )
-        await send_event_log(self.runtime, thread.guild, "thread_delete", embed, channel=thread.parent)
+        await send_event_log(
+            self.runtime,
+            thread.guild,
+            "thread_delete",
+            embed,
+            channel=thread.parent,
+            avatar_user=thread.owner,
+        )
 
     @commands.Cog.listener()
     async def on_guild_update(self, before: discord.Guild, after: discord.Guild) -> None:

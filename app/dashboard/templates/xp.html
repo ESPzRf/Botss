@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "components.html" import channel_picker, role_picker %}
 {% block content %}
 <form method="post" action="/g/{{ guild.id }}/xp">
   <input type="hidden" name="_csrf" value="{{ session.csrf }}">
@@ -80,20 +81,14 @@
     <h2>Исключения</h2>
     <div class="form-grid">
       <div class="form-row">
-        <label for="xp_ignore_channels">Каналы без опыта</label>
-        <select id="xp_ignore_channels" name="xp_ignore_channels" multiple size="8">
-          {% for channel in all_channels %}
-            <option value="{{ channel.id }}" {{ 'selected' if channel.id in cfg.xp_ignore_channels }}>{{ channel.name }}</option>
-          {% endfor %}
-        </select>
+        <span class="label">Каналы без опыта</span>
+        {{ channel_picker('xp_ignore_channels', all_channels, cfg.xp_ignore_channels, 'Каналы не выбраны') }}
+        <span class="desc">Сообщения и голос в этих каналах не дают опыт.</span>
       </div>
       <div class="form-row">
-        <label for="xp_ignore_roles">Роли без опыта</label>
-        <select id="xp_ignore_roles" name="xp_ignore_roles" multiple size="8">
-          {% for role in all_roles %}
-            <option value="{{ role.id }}" {{ 'selected' if role.id in cfg.xp_ignore_roles }}>{{ role.name }}</option>
-          {% endfor %}
-        </select>
+        <span class="label">Роли без опыта</span>
+        {{ role_picker('xp_ignore_roles', all_roles, cfg.xp_ignore_roles, 'Роли не выбраны') }}
+        <span class="desc">Участники с этими ролями не получают опыт.</span>
       </div>
     </div>
   </div>

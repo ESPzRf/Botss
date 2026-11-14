@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "components.html" import role_picker %}
 {% block content %}
 <form method="post" action="/g/{{ guild.id }}/autoroles">
   <input type="hidden" name="_csrf" value="{{ session.csrf }}">
@@ -10,13 +11,9 @@
       Бот должен стоять выше этих ролей в списке ролей.
     </p>
     <div class="form-row">
-      <label for="autorole_ids">Автороли</label>
-      <select id="autorole_ids" name="autorole_ids" multiple size="14">
-        {% for role in roles %}
-          <option value="{{ role.id }}" {{ 'selected' if role.id in cfg.autorole_ids }}>{{ role.name }}</option>
-        {% endfor %}
-      </select>
-      <span class="desc">Удерживайте Ctrl/Cmd, чтобы выбрать несколько ролей.</span>
+      <span class="label">Автороли</span>
+      {{ role_picker('autorole_ids', roles, cfg.autorole_ids, 'Роли не выбраны') }}
+      <span class="desc">Бот должен стоять выше этих ролей в списке ролей.</span>
     </div>
   </div>
 
