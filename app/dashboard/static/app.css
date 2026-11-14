@@ -486,6 +486,23 @@ tbody tr:hover { background: rgba(28, 33, 45, 0.45); }
 .feature-list li { display: flex; gap: 10px; font-size: 13px; color: #c5cad6; }
 .feature-list .ico { color: var(--brand-2); }
 
+.oauth-hint {
+  margin: 16px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0e1118;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.oauth-hint code {
+  display: block;
+  margin-top: 5px;
+  color: #c9ceff;
+  word-break: break-all;
+  white-space: normal;
+}
+
 .public-header {
   display: flex;
   align-items: center;

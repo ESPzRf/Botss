@@ -450,6 +450,21 @@ Redirect URI в Developer Portal должен точно совпадать с
 `DISCORD_CLIENT_SECRET`. На HTTPS cookie должны быть Secure — для этого
 `DASHBOARD_URL` тоже должен быть `https://`.
 
+**Discord пишет «Некорректный OAuth2 redirect_uri».**
+Посмотрите, какой URI отправляет приложение:
+
+```bash
+curl -s -D - -o /dev/null http://127.0.0.1:8000/login \
+  | grep -i '^location:' \
+  | sed 's/.*redirect_uri=//; s/&.*//'
+```
+
+Добавьте в Developer Portal ровно этот URI. Если приложение отправляет
+`http://localhost:8000/auth/callback`, открывайте дашборд через SSH-туннель
+по `http://localhost:8000`, а не по `http://IP:8000`: иначе state-cookie
+останется на IP, а callback придёт на localhost. Внешний `http://IP:8000`
+Discord не принимает — для публичного дашборда нужен HTTPS-домен.
+
 **Наказания не снимаются.**
 Фоновая проверка идёт раз в 30 секунд. Если бот был выключен, наказания
 снимутся после запуска. При ошибке прав дело закрывается с пометкой

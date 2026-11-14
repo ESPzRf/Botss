@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 
 import discord
 from fastapi import FastAPI, HTTPException, Request
@@ -196,13 +196,31 @@ def create_app(runtime: Runtime) -> FastAPI:
         return GuildPage(session=session, guild=guild, config=config)
 
     def render(request: Request, template: str, *, status_code: int = 200, **context: Any):
+        settings = runtime.settings
+        request_host = (request.url.hostname or "").lower()
+        oauth_host = (urlparse(settings.dashboard_url).hostname or "").lower()
+        loopback = {"localhost", "127.0.0.1", "::1"}
+        host_mismatch = bool(
+            request_host
+            and oauth_host
+            and request_host != oauth_host
+            and not (request_host in loopback and oauth_host in loopback)
+        )
         context.setdefault("request", request)
         context.setdefault("session", getattr(request.state, "session", None))
-        context.setdefault("settings", runtime.settings)
+        context.setdefault("settings", settings)
         context.setdefault("bot_ready", runtime.bot_ready)
         context.setdefault("ok", request.query_params.get("ok"))
         context.setdefault("err", request.query_params.get("err"))
-        context.setdefault("invite_url", bot_invite_url(runtime.settings.client_id))
+        context.setdefault("invite_url", bot_invite_url(settings.client_id))
+        context.setdefault("oauth_redirect_uri", settings.oauth_redirect_uri)
+        context.setdefault("request_host", request_host)
+        context.setdefault("oauth_host", oauth_host)
+        context.setdefault("oauth_host_mismatch", host_mismatch)
+        context.setdefault(
+            "oauth_uses_http",
+            settings.dashboard_url.startswith("http://") and oauth_host not in loopback,
+        )
         return templates.TemplateResponse(request, template, context, status_code=status_code)
 
     def redirect(path: str, *, ok: str | None = None, err: str | None = None) -> RedirectResponse:

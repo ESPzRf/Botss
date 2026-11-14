@@ -7,6 +7,7 @@ import asyncio
 import logging
 import sys
 from dataclasses import replace
+from urllib.parse import urlparse
 
 import uvicorn
 
@@ -61,6 +62,18 @@ async def run(args: argparse.Namespace) -> int:
         logger.warning(
             "DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET не заданы — вход в дашборд не будет работать."
         )
+
+    oauth_host = (urlparse(settings.dashboard_url).hostname or "").lower()
+    if (
+        settings.dashboard_url.startswith("http://")
+        and oauth_host not in {"localhost", "127.0.0.1", "::1"}
+    ):
+        logger.warning(
+            "DASHBOARD_URL использует HTTP для внешнего адреса (%s). "
+            "Discord OAuth принимает только HTTPS (кроме localhost).",
+            settings.dashboard_url,
+        )
+    logger.info("OAuth redirect URI: %s", settings.oauth_redirect_uri)
 
     runtime = Runtime(settings)
     await runtime.db.connect()

@@ -10,6 +10,28 @@
     {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
     {% if ok %}<div class="alert ok">{{ ok }}</div>{% endif %}
 
+    {% if oauth_host_mismatch %}
+      <div class="alert err">
+        Адрес не совпадает с настройкой OAuth: вы открыли
+        <code>{{ request_host }}</code>, а <code>DASHBOARD_URL</code> указывает на
+        <code>{{ oauth_host }}</code>. Discord вернёт вас на
+        <code>{{ oauth_redirect_uri }}</code> — открывайте дашборд по этому
+        адресу (для localhost — через SSH-туннель).
+      </div>
+    {% endif %}
+    {% if oauth_uses_http %}
+      <div class="alert err">
+        <code>DASHBOARD_URL</code> использует <code>http://</code> для внешнего
+        адреса. Discord принимает OAuth redirect только по HTTPS (исключение —
+        localhost). Для публичного дашборда нужен домен и TLS.
+      </div>
+    {% endif %}
+
+    <div class="oauth-hint">
+      <span>Redirect URI для Discord Developer Portal</span>
+      <code>{{ oauth_redirect_uri }}</code>
+    </div>
+
     <ul class="feature-list">
       <li><span class="ico">📜</span> Логи входов, сообщений, голоса и модерации</li>
       <li><span class="ico">🛡️</span> Предупреждения, тайм-ауты и временные баны</li>

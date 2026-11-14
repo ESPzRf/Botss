@@ -400,12 +400,36 @@ curl -s http://127.0.0.1:8000/healthz
 
 ### OAuth: invalid redirect_uri
 
-- `DASHBOARD_URL` в env;
-- redirect в Developer Portal;
-- `https` и домен;
-- отсутствие `/` в конце.
+Discord требует **точного** совпадения redirect URI. Посмотрите, что
+отправляет само приложение:
 
-Все три значения должны совпадать.
+```bash
+curl -s -D - -o /dev/null http://127.0.0.1:8000/login \
+  | grep -i '^location:' \
+  | sed 's/.*redirect_uri=//; s/&.*//'
+```
+
+В ответе будет что-то вроде:
+
+```
+http%3A%2F%2Flocalhost%3A8000%2Fauth%2Fcallback
+```
+
+Добавьте в Developer Portal → OAuth2 → Redirects **ровно этот URI**
+(в раскодированном виде: `http://localhost:8000/auth/callback`).
+
+Частые ошибки:
+
+- в приложении `localhost`, в портале IP или домен;
+- `http://` вместо `https://` для внешнего адреса;
+- порт `8000` против `8080`;
+- лишний `/` в конце;
+- открыт `http://51.250.79.201:8000`, а OAuth настроен на `localhost`:
+  state-cookie останется на IP, callback придёт на localhost. Для такого
+  сценария используйте SSH-туннель и открывайте `http://localhost:8000`.
+
+Все значения — `DASHBOARD_URL`, redirect в портале и адрес в браузере —
+должны быть согласованы.
 
 ### Бот онлайн, но команды не появились
 
