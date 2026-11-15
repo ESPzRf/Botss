@@ -9,13 +9,15 @@ from discord.ext import commands, tasks
 
 from app.bot import embeds
 from app.bot.log_dispatch import send_mod_action, try_dm
+from app.bot.services.moderation import reconcile_guild
 from app.core.models import CASE_BAN, CASE_MUTE, CASE_TIMEOUT, Case
+from app.core.utils import to_iso
 
 logger = logging.getLogger(__name__)
 
 
 class Punishments(commands.Cog):
-    """Раз в 30 секунд проверяет истёкшие наказания и снимает их."""
+    """Снимает истёкшие наказания и сверяет активные дела с Discord."""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
@@ -23,9 +25,63 @@ class Punishments(commands.Cog):
 
     async def cog_load(self) -> None:
         self.expiry_loop.start()
+        self.reconcile_loop.start()
 
     async def cog_unload(self) -> None:
         self.expiry_loop.cancel()
+        self.reconcile_loop.cancel()
+
+    @commands.Cog.listener()
+    async def on_member_update(
+        self, before: discord.Member, after: discord.Member
+    ) -> None:
+        """Ловит ручное снятие тайм-аута или роли мута."""
+        guild = after.guild
+
+        if before.timed_out_until != after.timed_out_until:
+            if after.timed_out_until is None:
+                await self.runtime.repo.close_active_cases(
+                    guild.id,
+                    after.id,
+                    (CASE_TIMEOUT,),
+                    self.bot.user.id if self.bot.user else None,
+                    "Тайм-аут снят вручную",
+                )
+            else:
+                case = await self.runtime.repo.active_case(
+                    guild.id, after.id, (CASE_TIMEOUT,)
+                )
+                if case is not None:
+                    await self.runtime.repo.update_case_expires(
+                        case.id, to_iso(after.timed_out_until)
+                    )
+
+        if before.roles == after.roles:
+            return
+        config = await self.runtime.config(guild)
+        role = guild.get_role(config.mute_role_id) if config.mute_role_id else None
+        if role is not None and role in before.roles and role not in after.roles:
+            await self.runtime.repo.close_active_cases(
+                guild.id,
+                after.id,
+                (CASE_MUTE,),
+                self.bot.user.id if self.bot.user else None,
+                "Мут снят вручную",
+            )
+
+    @tasks.loop(minutes=5)
+    async def reconcile_loop(self) -> None:
+        for guild in list(self.bot.guilds):
+            try:
+                await reconcile_guild(self.runtime, guild)
+            except Exception:  # noqa: BLE001
+                logger.exception("Ошибка сверки наказаний на сервере %s", guild.id)
+
+    @reconcile_loop.before_loop
+    async def before_reconcile(self) -> None:
+        if not hasattr(getattr(self.bot, "_ready", None), "wait"):
+            return
+        await self.bot.wait_until_ready()
 
     @tasks.loop(seconds=30)
     async def expiry_loop(self) -> None:
@@ -94,14 +150,17 @@ class Punishments(commands.Cog):
         )
 
         if member is not None:
-            await try_dm(
-                member,
-                embeds.dm_punishment_embed(
-                    guild_name=guild.name,
-                    action="Наказание снято",
-                    reason=end_reason,
-                    case_id=case.id,
+            self.runtime.spawn(
+                try_dm(
+                    member,
+                    embeds.dm_punishment_embed(
+                        guild_name=guild.name,
+                        action="Наказание снято",
+                        reason=end_reason,
+                        case_id=case.id,
+                    ),
                 ),
+                name=f"dm-expire:{case.id}",
             )
 
 

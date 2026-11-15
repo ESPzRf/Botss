@@ -120,6 +120,10 @@ async def run(args: argparse.Namespace) -> int:
         exit_code = 1
     finally:
         server.should_exit = True
+        try:
+            await runtime.shutdown_tasks()
+        except Exception:  # noqa: BLE001
+            logger.exception("Не удалось корректно завершить фоновые задачи")
         for task in tasks:
             if not task.done():
                 task.cancel()

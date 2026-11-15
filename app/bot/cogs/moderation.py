@@ -50,6 +50,7 @@ class Moderation(commands.Cog):
         reason: str,
         duration: int | None = None,
         case_id: int | None = None,
+        background: bool = False,
     ) -> None:
         embed = embeds.dm_punishment_embed(
             guild_name=guild_name,
@@ -58,7 +59,13 @@ class Moderation(commands.Cog):
             duration=duration,
             case_id=case_id,
         )
-        await try_dm(user, embed)
+        if background:
+            self.runtime.spawn(
+                try_dm(user, embed),
+                name=f"dm:{getattr(user, 'id', 'unknown')}",
+            )
+        else:
+            await try_dm(user, embed)
 
     def _case_embed(self, case: Case) -> discord.Embed:
         color = embeds.COLOR_MOD if case.active else embeds.COLOR_LOG
@@ -273,12 +280,6 @@ class Moderation(commands.Cog):
         )
         count = await self.runtime.repo.count_active_warnings(interaction.guild.id, member.id)
 
-        await self._dm(
-            member,
-            guild_name=interaction.guild.name,
-            action="Предупреждение",
-            reason=reason,
-        )
         embed = embeds.success(
             "Предупреждение выдано",
             f"{member.mention} получил предупреждение `#{warning.id}`.\n"
@@ -286,6 +287,12 @@ class Moderation(commands.Cog):
         )
         await interaction.followup.send(embed=embed, ephemeral=True)
 
+        await self._dm(
+            member,
+            guild_name=interaction.guild.name,
+            action="Предупреждение",
+            reason=reason,
+        )
         await self._log(
             interaction.guild,
             title="Предупреждение",
@@ -445,6 +452,13 @@ class Moderation(commands.Cog):
             )
             return
 
+        await interaction.followup.send(
+            embed=embeds.success(
+                "Тайм-аут выдан",
+                f"{member.mention} не сможет писать **{format_duration(seconds)}**.\nДело `#{case.id}`.",
+            ),
+            ephemeral=True,
+        )
         await self._dm(
             member,
             guild_name=interaction.guild.name,
@@ -452,13 +466,7 @@ class Moderation(commands.Cog):
             reason=reason,
             duration=seconds,
             case_id=case.id,
-        )
-        await interaction.followup.send(
-            embed=embeds.success(
-                "Тайм-аут выдан",
-                f"{member.mention} не сможет писать **{format_duration(seconds)}**.\nДело `#{case.id}`.",
-            ),
-            ephemeral=True,
+            background=True,
         )
         await self._log(
             interaction.guild,
@@ -564,6 +572,13 @@ class Moderation(commands.Cog):
                     embed=embeds.error("Не удалось", "Discord запретил выдать тайм-аут."), ephemeral=True
                 )
                 return
+            await interaction.followup.send(
+                embed=embeds.success(
+                    "Мут выдан",
+                    f"{member.mention} заглушен на **{format_duration(seconds)}** (тайм-аут).",
+                ),
+                ephemeral=True,
+            )
             await self._dm(
                 member,
                 guild_name=interaction.guild.name,
@@ -571,13 +586,7 @@ class Moderation(commands.Cog):
                 reason=reason,
                 duration=seconds,
                 case_id=case.id,
-            )
-            await interaction.followup.send(
-                embed=embeds.success(
-                    "Мут выдан",
-                    f"{member.mention} заглушен на **{format_duration(seconds)}** (тайм-аут).",
-                ),
-                ephemeral=True,
+                background=True,
             )
             await self._log(
                 interaction.guild,
@@ -615,6 +624,13 @@ class Moderation(commands.Cog):
             expires_at=to_iso(utcnow() + timedelta(seconds=seconds)),
             extra={"role_id": role.id},
         )
+        await interaction.followup.send(
+            embed=embeds.success(
+                "Мут выдан",
+                f"{member.mention} заглушен на **{format_duration(seconds)}**.\nДело `#{case.id}`.",
+            ),
+            ephemeral=True,
+        )
         await self._dm(
             member,
             guild_name=interaction.guild.name,
@@ -622,13 +638,7 @@ class Moderation(commands.Cog):
             reason=reason,
             duration=seconds,
             case_id=case.id,
-        )
-        await interaction.followup.send(
-            embed=embeds.success(
-                "Мут выдан",
-                f"{member.mention} заглушен на **{format_duration(seconds)}**.\nДело `#{case.id}`.",
-            ),
-            ephemeral=True,
+            background=True,
         )
         await self._log(
             interaction.guild,

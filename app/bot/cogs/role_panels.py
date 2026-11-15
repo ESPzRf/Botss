@@ -53,6 +53,7 @@ class RolePanels(commands.Cog):
     async def on_guild_role_delete(self, role: discord.Role) -> None:
         panel_ids = await self.runtime.repo.remove_role_references(role.guild.id, role.id)
         self.runtime.invalidate_config(role.guild.id)
+        self.runtime.invalidate_achievements(role.guild.id)
         for panel_id in panel_ids:
             await publish_panel(self.runtime, panel_id)
 

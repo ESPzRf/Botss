@@ -394,6 +394,13 @@ class Repository:
         )
         return changed > 0
 
+    async def update_case_expires(self, case_id: int, expires_at: str | None) -> bool:
+        changed = await self.db.execute_count(
+            "UPDATE cases SET expires_at = ? WHERE id = ? AND active = 1",
+            (expires_at, case_id),
+        )
+        return changed > 0
+
     async def count_active_cases(self, guild_id: int) -> int:
         return int(
             await self.db.scalar(
@@ -545,11 +552,15 @@ class Repository:
         )
         return [MemberStats.from_row(row) for row in rows]
 
-    async def rank_position(self, guild_id: int, user_id: int) -> int:
-        stats = await self.get_stats(guild_id, user_id)
+    async def rank_position(
+        self, guild_id: int, user_id: int, *, xp: int | None = None
+    ) -> int:
+        if xp is None:
+            stats = await self.get_stats(guild_id, user_id)
+            xp = stats.xp
         better = await self.db.scalar(
             "SELECT COUNT(*) FROM member_stats WHERE guild_id = ? AND xp > ?",
-            (guild_id, stats.xp),
+            (guild_id, xp),
         )
         return int(better) + 1
 

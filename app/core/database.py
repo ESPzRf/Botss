@@ -40,6 +40,8 @@ class Database:
         conn.execute("PRAGMA synchronous = NORMAL")
         conn.execute("PRAGMA foreign_keys = ON")
         conn.execute("PRAGMA busy_timeout = 5000")
+        conn.execute("PRAGMA cache_size = -20000")
+        conn.execute("PRAGMA temp_store = MEMORY")
 
         version = int(conn.execute("PRAGMA user_version").fetchone()[0])
         if version < SCHEMA_VERSION:

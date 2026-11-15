@@ -98,7 +98,7 @@ async def check_achievements(
     if stats is None:
         stats = await runtime.repo.get_stats(guild.id, member.id)
 
-    achievements = await runtime.repo.list_achievements(guild.id, enabled_only=True)
+    achievements = await runtime.achievements(guild.id)
     if not achievements:
         return []
     unlocked = await runtime.repo.unlocked_achievement_ids(guild.id, member.id)

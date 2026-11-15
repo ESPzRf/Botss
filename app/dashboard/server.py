@@ -20,6 +20,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.bot import embeds
 from app.bot.runtime import Runtime
 from app.bot.services.panels import publish_panel
+from app.bot.services.moderation import reconcile_guild
 from app.core.defaults import CONDITION_LABELS
 from app.core.durations import DurationError, format_duration, parse_duration
 from app.core.events import ALL_EVENT_KEYS, EVENT_GROUPS
@@ -475,6 +476,10 @@ def create_app(runtime: Runtime) -> FastAPI:
     @app.get("/g/{guild_id}", response_class=HTMLResponse)
     async def overview(request: Request, guild_id: int):
         page = await require_guild(request, guild_id)
+        try:
+            await reconcile_guild(runtime, page.guild, check_bans=False)
+        except Exception:  # noqa: BLE001
+            logger.exception("Не удалось сверить наказания для обзора")
         counters = await runtime.repo.guild_counters(guild_id)
         cases = await runtime.repo.list_cases(guild_id, limit=6)
         warnings = await runtime.repo.list_warnings(guild_id, active_only=True, limit=6)
@@ -593,6 +598,10 @@ def create_app(runtime: Runtime) -> FastAPI:
     @app.get("/g/{guild_id}/moderation", response_class=HTMLResponse)
     async def moderation_page(request: Request, guild_id: int):
         page = await require_guild(request, guild_id)
+        try:
+            await reconcile_guild(runtime, page.guild, check_bans=False)
+        except Exception:  # noqa: BLE001
+            logger.exception("Не удалось сверить наказания для дашборда")
         context = guild_context(page, "moderation")
         context.update(
             {
@@ -864,6 +873,7 @@ def create_app(runtime: Runtime) -> FastAPI:
             )
         except FormError as exc:
             return redirect(f"/g/{guild_id}/achievements", err=str(exc))
+        runtime.invalidate_achievements(guild_id)
         return redirect(f"/g/{guild_id}/achievements", ok="Достижение создано.")
 
     @app.post("/g/{guild_id}/achievements/{achievement_id}/toggle")
@@ -875,6 +885,7 @@ def create_app(runtime: Runtime) -> FastAPI:
         if achievement is None or achievement.guild_id != guild_id:
             return redirect(f"/g/{guild_id}/achievements", err="Достижение не найдено.")
         await runtime.repo.set_achievement_enabled(achievement_id, not achievement.enabled)
+        runtime.invalidate_achievements(guild_id)
         return redirect(f"/g/{guild_id}/achievements", ok="Статус достижения изменён.")
 
     @app.post("/g/{guild_id}/achievements/{achievement_id}/delete")
@@ -886,6 +897,7 @@ def create_app(runtime: Runtime) -> FastAPI:
         if achievement is None or achievement.guild_id != guild_id:
             return redirect(f"/g/{guild_id}/achievements", err="Достижение не найдено.")
         await runtime.repo.delete_achievement(achievement_id)
+        runtime.invalidate_achievements(guild_id)
         return redirect(f"/g/{guild_id}/achievements", ok="Достижение удалено.")
 
     # ── Магазин ──────────────────────────────────────────────────────────────

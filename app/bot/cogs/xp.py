@@ -149,7 +149,9 @@ class XP(commands.Cog):
             )
             return
         stats = await self.runtime.repo.get_stats(interaction.guild.id, target.id)
-        position = await self.runtime.repo.rank_position(interaction.guild.id, target.id)
+        position = await self.runtime.repo.rank_position(
+            interaction.guild.id, target.id, xp=stats.xp
+        )
         level, current, needed, percent = level_progress(stats.xp)
 
         embed = embeds.base(f"📊 {target.display_name}", color=embeds.COLOR_XP)
@@ -190,7 +192,9 @@ class XP(commands.Cog):
         if lines:
             embed.description = "\n".join(lines)
         own = await self.runtime.repo.get_stats(interaction.guild.id, interaction.user.id)
-        own_place = await self.runtime.repo.rank_position(interaction.guild.id, interaction.user.id)
+        own_place = await self.runtime.repo.rank_position(
+            interaction.guild.id, interaction.user.id, xp=own.xp
+        )
         embed.set_footer(text=f"Ваше место: #{own_place} · {format_number(own.xp)} XP")
         await interaction.response.send_message(
             embed=embed, allowed_mentions=discord.AllowedMentions.none()

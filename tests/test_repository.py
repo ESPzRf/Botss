@@ -98,6 +98,7 @@ class RepositoryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(stats.voice_minutes, 2)
         self.assertEqual(stats.xp, 150)
         self.assertEqual(await self.repo.rank_position(100, 200), 1)
+        self.assertEqual(await self.repo.rank_position(100, 200, xp=150), 1)
 
     async def test_shop_purchase_and_refund(self) -> None:
         item = await self.repo.create_shop_item(

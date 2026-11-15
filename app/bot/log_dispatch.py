@@ -58,19 +58,29 @@ async def send_event_log(
 
     apply_user_avatar(embed, avatar_user or user)
 
+    runtime.spawn(
+        _deliver(target, embed, channel_id),
+        name=f"log:{event_key}:{guild.id}",
+    )
+    return True
+
+
+async def _deliver(
+    target: discord.TextChannel | discord.Thread,
+    embed: discord.Embed,
+    channel_id: int,
+) -> None:
     try:
         await target.send(
             embed=embed,
             allowed_mentions=discord.AllowedMentions.none(),
         )
-        return True
     except discord.Forbidden:
         if channel_id not in _warned_channels:
             _warned_channels.add(channel_id)
             logger.warning("Нет прав на отправку логов в канал %s", channel_id)
     except discord.HTTPException:
         logger.exception("Ошибка отправки лога в канал %s", channel_id)
-    return False
 
 
 async def send_mod_action(
